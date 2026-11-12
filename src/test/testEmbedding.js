@@ -1,5 +1,5 @@
 import { splitDocuments } from "../utils/textSplitter.js";
-import { loadDocuments } from "../index.js";
+import { loadDocuments } from "../loaders/documentLoader.js";
 
 import {
   generateDocumentEmbedding,

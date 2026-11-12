@@ -1,4 +1,4 @@
-import { loadDocuments } from "../index.js";
+import { loadDocuments } from "../loaders/documentLoader.js";
 import {splitDocuments} from '../utils/textSplitter.js'
 import { createVectorStore } from "../vectorstore/chromaStore.js";
 

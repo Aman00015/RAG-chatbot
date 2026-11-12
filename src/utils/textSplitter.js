@@ -1,18 +1,28 @@
-import {RecursiveCharacterTextSplitter} from "@langchain/textsplitters"
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
-
-const CHUNK_SIZE=50;
-const CHUNK_OVERLAP=20;
+const CHUNK_SIZE = 1000;
+const CHUNK_OVERLAP = 150;
 
 const splitter = new RecursiveCharacterTextSplitter({
-    chunkSize:CHUNK_SIZE,
-    chunkOverlap:CHUNK_OVERLAP
-})
+  chunkSize: CHUNK_SIZE,
+  chunkOverlap: CHUNK_OVERLAP,
+});
 
-export async function splitDocuments(documents){
-    const chunks = await splitter.splitDocuments(documents)
-    console.log(`Created ${chunks.length} chunks`);
-    return chunks    
+export async function splitDocuments(documents) {
+  const allChunks = [];
+  for (const document of documents) {
+    const documentChunks = await splitter.splitDocuments([document]);
+
+    const indexedChunks = documentChunks.map((chunk, index) => {
+      chunk.metadata = {
+        ...chunk.metadata,
+        chunkIndex: index,
+      };
+      return chunk;
+    });
+    allChunks.push(...indexedChunks);
+  }
+
+  console.log(`Created ${allChunks.length} chunks`);
+  return allChunks;
 }
-
-

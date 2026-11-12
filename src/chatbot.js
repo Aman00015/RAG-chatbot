@@ -9,6 +9,19 @@ const rl = readline.createInterface({
 
 const chatHistory = []
 
+/**
+ * Formats an error including its underlying cause when available (e.g. fetch ECONNREFUSED).
+ */
+function formatError(error) {
+    const cause = error?.cause;
+    if (!cause) return error?.message ?? String(error);
+    const nestedDetails = Array.isArray(cause.errors)
+        ? [...new Set(cause.errors.map((e) => e?.code || e?.message).filter(Boolean))].join(", ")
+        : "";
+    const causeDetail = cause.message || cause.code || nestedDetails;
+    return causeDetail ? `${error.message} (${causeDetail})` : error.message;
+}
+
 async function startChatbot(){
     console.log('\n=============================');
     console.log('       LOCAL RAG CHATBOT       ');
@@ -54,7 +67,7 @@ async function startChatbot(){
             }
             console.log('\n');
         } catch (error) {
-            console.error('\nSomething went wrong:',error.message)
+            console.error('\nSomething went wrong:', formatError(error))
             console.log('Please try again \n');   
         }
     }
