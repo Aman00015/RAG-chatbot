@@ -4,6 +4,48 @@ A local document question-answering chatbot built with LangChain, Ollama, Chroma
 
 The application loads `.txt`, `.md`, and `.pdf` files from `docs/`, splits them into chunks, generates embeddings, stores them in ChromaDB, and answers questions with a local Ollama model.
 
+## Architecture
+
+```mermaid
+flowchart TB
+    Start["Source documents\n.txt · .md · .pdf"] --> Loader["Document loader\n& file processor"]
+    Loader --> Splitter["Recursive text splitter\n1000-character chunks\n150-character overlap"]
+    Splitter --> Chunks["Document chunks\nwith source metadata"]
+    Chunks --> DocumentEmbeddings["Ollama embedding model\nnomic-embed-text"]
+    DocumentEmbeddings --> Store["Store chunk vectors + text\nin ChromaDB collection"]
+
+    Store --> Database[("ChromaDB\nlocalhost:8000")]
+
+    User["User question"] --> Chatbot["Terminal chatbot"]
+    Chatbot --> Pipeline["RAG answer pipeline"]
+    Pipeline --> History{"Conversation history?"}
+    History -->|Yes| Rewrite["Rewrite follow-up question\nusing qwen3.5:4b"]
+    History -->|No| RetrievalQuestion["Use original question"]
+    Rewrite --> RetrievalQuestion
+    RetrievalQuestion --> QueryEmbedding["Embed retrieval question\nwith the same nomic-embed-text model"]
+    QueryEmbedding --> Similarity["Vector similarity search\nin ChromaDB · top 5 chunks"]
+    Database --> Similarity
+    Similarity --> Retrieved["Retrieved chunk text\nand source metadata"]
+    Retrieved --> Prompt["Build prompt with\nquestion + history + context"]
+    Prompt --> LLM["Ollama chat model\nqwen3.5:4b"]
+    LLM --> Response["Answer + source documents"]
+    Response --> Chatbot
+
+    DocumentEmbeddings -.-> Ollama["Ollama\nlocalhost:11434"]
+    QueryEmbedding -.-> Ollama
+    LLM -.-> Ollama
+```
+
+The flow is a standard retrieval-augmented generation (RAG) pipeline. ChromaDB stores
+both the chunk text and its embedding, so the query embedding can be compared with
+stored vectors and the matching chunk text can be passed to the chat model. The LLM
+does not query ChromaDB directly.
+
+In this implementation, `similaritySearch()` performs the query embedding and vector
+search internally. The diagram shows those internal steps explicitly for clarity.
+The code does not explicitly configure ChromaDB's distance metric, so the diagram
+uses "vector similarity search" rather than claiming cosine similarity specifically.
+
 ## Requirements
 
 - Node.js 18+
